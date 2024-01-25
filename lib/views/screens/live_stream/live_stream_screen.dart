@@ -1,8 +1,10 @@
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:live_stream/controllers/live_view_bloc/live_view_cubit.dart';
 import 'package:live_stream/controllers/live_view_bloc/live_view_state.dart';
 import 'package:live_stream/models/comment_model.dart';
+import 'package:live_stream/services/agora_service.dart';
 import 'package:live_stream/views/widgets/live_button.dart';
 import 'package:live_stream/views/widgets/live_comments.dart';
 import 'package:live_stream/views/widgets/live_count.dart';
@@ -17,7 +19,12 @@ final border = OutlineInputBorder(
 );
 
 class LiveStreamScreen extends StatelessWidget {
-  const LiveStreamScreen({super.key});
+  final AgoraBaseService service;
+
+  const LiveStreamScreen({
+    super.key,
+    required this.service,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,20 +39,23 @@ class LiveStreamScreen extends StatelessWidget {
         fullScreen: (context) {
           return Stack(
             children: [
-              Container(
-                width: screenWidth,
-                height: screenHeight,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    fit: BoxFit.cover,
-                    image: NetworkImage(
-                        "https://img.freepik.com/premium-photo/closeup-drop-water-leaf-flower-reflecting-surrounding-colors-textures_674594-4382.jpg?size=626&ext=jpg&ga=GA1.1.632798143.1705881600&semt=ais"),
-                  ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(kVideoRadius),
-                    bottomRight: Radius.circular(kVideoRadius),
-                  ),
-                ),
+              // Container(
+              //   width: screenWidth,
+              //   height: screenHeight,
+              //   decoration: const BoxDecoration(
+              //     image: DecorationImage(
+              //       fit: BoxFit.cover,
+              //       image: NetworkImage(
+              //           "https://img.freepik.com/premium-photo/closeup-drop-water-leaf-flower-reflecting-surrounding-colors-textures_674594-4382.jpg?size=626&ext=jpg&ga=GA1.1.632798143.1705881600&semt=ais"),
+              //     ),
+              //     borderRadius: BorderRadius.only(
+              //       bottomLeft: Radius.circular(kVideoRadius),
+              //       bottomRight: Radius.circular(kVideoRadius),
+              //     ),
+              //   ),
+              // ),
+              LiveStreamVideo(
+                service: service,
               ),
               Positioned(
                 left: 20,
@@ -108,18 +118,21 @@ class LiveStreamScreen extends StatelessWidget {
                   child: Stack(
                     children: [
                       ///TODO Live View
-                      Container(
+                      SizedBox(
                         height: screenHeight * 0.3,
-                        decoration: const BoxDecoration(
-                          image: DecorationImage(
-                            fit: BoxFit.cover,
-                            image: NetworkImage(
-                                "https://img.freepik.com/premium-photo/closeup-drop-water-leaf-flower-reflecting-surrounding-colors-textures_674594-4382.jpg?size=626&ext=jpg&ga=GA1.1.632798143.1705881600&semt=ais"),
-                          ),
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(kVideoRadius),
-                            bottomRight: Radius.circular(kVideoRadius),
-                          ),
+                        // decoration: const BoxDecoration(
+                        //   image: DecorationImage(
+                        //     fit: BoxFit.cover,
+                        //     image: NetworkImage(
+                        //         "https://img.freepik.com/premium-photo/closeup-drop-water-leaf-flower-reflecting-surrounding-colors-textures_674594-4382.jpg?size=626&ext=jpg&ga=GA1.1.632798143.1705881600&semt=ais"),
+                        //   ),
+                        //   borderRadius: BorderRadius.only(
+                        //     bottomLeft: Radius.circular(kVideoRadius),
+                        //     bottomRight: Radius.circular(kVideoRadius),
+                        //   ),
+                        // ),
+                        child: LiveStreamVideo(
+                          service: service,
                         ),
                       ),
 
@@ -250,6 +263,89 @@ class LiveStreamScreen extends StatelessWidget {
   }
 }
 
+class LiveStreamVideo extends StatefulWidget {
+  final AgoraBaseService service;
+  const LiveStreamVideo({
+    super.key,
+    required this.service,
+  });
+
+  @override
+  State<LiveStreamVideo> createState() => _LiveStreamVideoState();
+}
+
+class _LiveStreamVideoState extends State<LiveStreamVideo> {
+  @override
+  void initState() {
+    super.initState();
+    init();
+  }
+
+  Future<void> init() async {
+    await widget.service.init();
+    widget.service.handler = AgoraHandler(
+      onJoinChannelSuccess: (conn, s) {},
+      onUserJoined: (conn, uid, _) {},
+      onUserOffline: (conn, uid, res) {},
+      onTokenPrivilegeWillExpire: (conn, token) {},
+    );
+
+    await widget.service.ready();
+
+    await widget.service.live(
+      "007eJxTYLCSs17qznLee+VxM3/JNUzHfWVU9q0zL1Pi8t5+ItGzYJECQ6pFspmhRWpimrFhiompuZFFUrKRUZqhUYqZUbJFsoERa9Cm1IZARgbTB89ZGBkgEMRnYShJLS5hYAAAOuEcTg==",
+      "test",
+    );
+  }
+
+  @override
+  void dispose() {
+    // widget.service.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream: widget.service.isReady.stream,
+      builder: (_, snp) {
+        if (widget.service is AgoraHostService) {
+          return AgoraVideoView(
+            onAgoraVideoViewCreated: (_) {
+              print("onAgoraVideoViewCreated  ${widget.service.remoteID}");
+            },
+            controller: widget.service.controller,
+          );
+        }
+
+        if (snp.data == null || widget.service.remoteID == 0) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        print("view ${snp.data!}");
+        return AgoraVideoView(
+          onAgoraVideoViewCreated: (_) {
+            print("onAgoraVideoViewCreated  ${widget.service.remoteID}");
+          },
+          controller: widget.service is AgoraHostService
+              ? widget.service.controller
+              : VideoViewController.remote(
+                  rtcEngine: widget.service.engine,
+                  canvas: VideoCanvas(
+                    uid: widget.service.remoteID,
+                  ),
+                  connection: const RtcConnection(
+                    channelId: "test",
+                  ),
+                ),
+        );
+      },
+    );
+  }
+}
+
+//3850026755
 class CommentSection extends StatelessWidget {
   final Widget Function(BuildContext, Comments)? builder;
   final double commentSectionWidth, commentSectionHeight;
@@ -281,7 +377,7 @@ class CommentSection extends StatelessWidget {
         children: [
           LiveComments(
             builder: builder != null
-                ? builder!.call
+                ? builder!
                 : (_, comment) {
                     return CommentBox(
                       padding: const EdgeInsets.symmetric(
@@ -298,7 +394,8 @@ class CommentSection extends StatelessWidget {
 
             ///Home Work
             child: TextField(
-              maxLines: null,
+              minLines: 1,
+              maxLines: 3,
               keyboardType: TextInputType.multiline,
               style: const TextStyle(
                 color: Colors.white,

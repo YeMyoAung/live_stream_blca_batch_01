@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:live_stream/models/comment_model.dart';
 
 class LiveComments extends StatefulWidget {
-  final Widget Function(BuildContext context, Comments comments) builder;
+  final Widget Function(BuildContext context, Comments comment) builder;
   const LiveComments({
     super.key,
     required this.builder,
