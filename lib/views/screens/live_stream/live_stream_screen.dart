@@ -1,16 +1,13 @@
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:live_stream/controllers/live_view_bloc/live_view_cubit.dart';
 import 'package:live_stream/controllers/live_view_bloc/live_view_state.dart';
 import 'package:live_stream/models/comment_model.dart';
-import 'package:live_stream/services/agora_service.dart';
-import 'package:live_stream/views/widgets/live_button.dart';
+import 'package:live_stream/services/agora/base/agora_base_service.dart';
+import 'package:live_stream/services/agora/impl/agora_host_service.dart';
+import 'package:live_stream/views/screens/live_stream/view/live_stream_full_screen_view.dart';
+import 'package:live_stream/views/screens/live_stream/view/live_stream_minized_screen_view.dart';
 import 'package:live_stream/views/widgets/live_comments.dart';
-import 'package:live_stream/views/widgets/live_count.dart';
-import 'package:live_stream/views/widgets/live_remark.dart';
-import 'package:live_stream/views/widgets/live_title.dart';
-import 'package:starlight_utils/starlight_utils.dart';
 
 const kVideoRadius = 20.0;
 const kBgColor = Color.fromRGBO(45, 40, 42, 1);
@@ -28,319 +25,26 @@ class LiveStreamScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = context.height;
-    final screenWidth = context.width;
-    final isUsedKeyboard = context.viewInsets.bottom > 0;
-    final commentSectionHeight =
-        isUsedKeyboard ? screenHeight * 0.7 : screenHeight + 0.45;
+    if (service is AgoraHostService) {
+      return Scaffold(
+        body: LiveStreamFullScreenView(
+          service: service,
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: kBgColor,
       body: ViewPortBuilder(
         fullScreen: (context) {
-          return Stack(
-            children: [
-              // Container(
-              //   width: screenWidth,
-              //   height: screenHeight,
-              //   decoration: const BoxDecoration(
-              //     image: DecorationImage(
-              //       fit: BoxFit.cover,
-              //       image: NetworkImage(
-              //           "https://img.freepik.com/premium-photo/closeup-drop-water-leaf-flower-reflecting-surrounding-colors-textures_674594-4382.jpg?size=626&ext=jpg&ga=GA1.1.632798143.1705881600&semt=ais"),
-              //     ),
-              //     borderRadius: BorderRadius.only(
-              //       bottomLeft: Radius.circular(kVideoRadius),
-              //       bottomRight: Radius.circular(kVideoRadius),
-              //     ),
-              //   ),
-              // ),
-              LiveStreamVideo(
-                service: service,
-              ),
-              Positioned(
-                left: 20,
-                right: 20,
-                top: 30,
-                child: SizedBox(
-                  width: screenWidth,
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          LiveRemark(),
-                          SizedBox(
-                            width: 30,
-                          ),
-                          LiveCount(
-                            count: "2.6k",
-                          ),
-                        ],
-                      ),
-                      LiveViewToggle(),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                child: CommentSection(
-                  builder: (_, comment) {
-                    return CommentBox(
-                      borderRadius: BorderRadius.circular(8),
-                      comment: comment,
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      padding: const EdgeInsets.all(10),
-                      backgroundColor: Colors.white.withOpacity(0.8),
-                      foregroundColor: Colors.black,
-                    );
-                  },
-                  borderRadius: BorderRadius.zero,
-                  backgroundColor: const Color.fromRGBO(70, 70, 70, 0.1),
-                  commentSectionWidth: screenWidth,
-                  commentSectionHeight: screenHeight * 0.5,
-                ),
-              ),
-            ],
+          return LiveStreamFullScreenView(
+            service: service,
           );
         },
         minimized: (context) {
-          return SizedBox(
-            width: screenWidth,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                //Video View s3
-                Container(
-                  margin: const EdgeInsets.only(bottom: 20),
-                  width: screenWidth,
-                  height: screenHeight * 0.3,
-                  child: Stack(
-                    children: [
-                      ///TODO Live View
-                      SizedBox(
-                        height: screenHeight * 0.3,
-                        // decoration: const BoxDecoration(
-                        //   image: DecorationImage(
-                        //     fit: BoxFit.cover,
-                        //     image: NetworkImage(
-                        //         "https://img.freepik.com/premium-photo/closeup-drop-water-leaf-flower-reflecting-surrounding-colors-textures_674594-4382.jpg?size=626&ext=jpg&ga=GA1.1.632798143.1705881600&semt=ais"),
-                        //   ),
-                        //   borderRadius: BorderRadius.only(
-                        //     bottomLeft: Radius.circular(kVideoRadius),
-                        //     bottomRight: Radius.circular(kVideoRadius),
-                        //   ),
-                        // ),
-                        child: LiveStreamVideo(
-                          service: service,
-                        ),
-                      ),
-
-                      Positioned(
-                        bottom: 0,
-                        child: Container(
-                          height: 60,
-                          width: screenWidth,
-                          decoration: const BoxDecoration(
-                            color: Color.fromRGBO(0, 0, 0, 0.2011),
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(kVideoRadius),
-                              bottomRight: Radius.circular(kVideoRadius),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 20,
-                        right: 20,
-                        bottom: 5,
-                        child: SizedBox(
-                          width: screenWidth,
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  LiveRemark(),
-                                  SizedBox(
-                                    width: 30,
-                                  ),
-                                  LiveCount(
-                                    count: "2.6k",
-                                  ),
-                                ],
-                              ),
-                              LiveViewToggle(),
-                            ],
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-                //Content View s2
-                if (!isUsedKeyboard)
-                  Container(
-                    padding:
-                        const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-                    height: screenHeight * 0.23,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Expanded(
-                          child: LiveTitle(
-                            title:
-                                "Music stream blah blah fjasdjfkasjfkasjd fjasdklfjakl fjadskfjfajskdfj fdaskfj fasdujo dfasjk",
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Row(
-                              children: [
-                                LiveButton(
-                                  width: 55,
-                                  height: 55,
-                                  color: Colors.black,
-                                  iconColor: Colors.white,
-                                  icon: Icons.star,
-                                ),
-                                LiveButton(
-                                  padding: EdgeInsets.symmetric(horizontal: 15),
-                                  width: 55,
-                                  height: 55,
-                                  color: Colors.black,
-                                  iconColor: Colors.white,
-                                  icon: Icons.thumb_up,
-                                ),
-                                LiveButton(
-                                  width: 55,
-                                  height: 55,
-                                  color: Colors.black,
-                                  iconColor: Colors.white,
-                                  icon: Icons.notifications_active,
-                                ),
-                              ],
-                            ),
-                            SizedBox(
-                              width: 110,
-                              height: 50,
-                              child: ElevatedButton(
-                                style: ButtonStyle(
-                                  shape: MaterialStatePropertyAll(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                  ),
-                                ),
-                                onPressed: () {},
-                                child: const Text("Donate"),
-                              ),
-                            )
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                //Chat View s5
-                Expanded(
-                  child: CommentSection(
-                    commentSectionWidth: screenWidth,
-                    commentSectionHeight: commentSectionHeight,
-                  ),
-                )
-              ],
-            ),
-          );
+          return LiveStreamMinizedScreenView(service: service);
         },
       ),
-    );
-  }
-}
-
-class LiveStreamVideo extends StatefulWidget {
-  final AgoraBaseService service;
-  const LiveStreamVideo({
-    super.key,
-    required this.service,
-  });
-
-  @override
-  State<LiveStreamVideo> createState() => _LiveStreamVideoState();
-}
-
-class _LiveStreamVideoState extends State<LiveStreamVideo> {
-  @override
-  void initState() {
-    super.initState();
-    init();
-  }
-
-  Future<void> init() async {
-    await widget.service.init();
-    widget.service.handler = AgoraHandler(
-      onJoinChannelSuccess: (conn, s) {},
-      onUserJoined: (conn, uid, _) {},
-      onUserOffline: (conn, uid, res) {},
-      onTokenPrivilegeWillExpire: (conn, token) {},
-    );
-
-    await widget.service.ready();
-
-    await widget.service.live(
-      "007eJxTYLCSs17qznLee+VxM3/JNUzHfWVU9q0zL1Pi8t5+ItGzYJECQ6pFspmhRWpimrFhiompuZFFUrKRUZqhUYqZUbJFsoERa9Cm1IZARgbTB89ZGBkgEMRnYShJLS5hYAAAOuEcTg==",
-      "test",
-    );
-  }
-
-  @override
-  void dispose() {
-    // widget.service.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: widget.service.isReady.stream,
-      builder: (_, snp) {
-        if (widget.service is AgoraHostService) {
-          return AgoraVideoView(
-            onAgoraVideoViewCreated: (_) {
-              print("onAgoraVideoViewCreated  ${widget.service.remoteID}");
-            },
-            controller: widget.service.controller,
-          );
-        }
-
-        if (snp.data == null || widget.service.remoteID == 0) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-        print("view ${snp.data!}");
-        return AgoraVideoView(
-          onAgoraVideoViewCreated: (_) {
-            print("onAgoraVideoViewCreated  ${widget.service.remoteID}");
-          },
-          controller: widget.service is AgoraHostService
-              ? widget.service.controller
-              : VideoViewController.remote(
-                  rtcEngine: widget.service.engine,
-                  canvas: VideoCanvas(
-                    uid: widget.service.remoteID,
-                  ),
-                  connection: const RtcConnection(
-                    channelId: "test",
-                  ),
-                ),
-        );
-      },
     );
   }
 }
