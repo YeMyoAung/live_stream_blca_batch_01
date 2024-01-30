@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:live_stream/controllers/live_view_bloc/live_view_cubit.dart';
+import 'package:live_stream/locator.dart';
 import 'package:live_stream/services/agora/base/agora_base_service.dart';
 import 'package:live_stream/services/agora/impl/agora_host_service.dart';
-import 'package:live_stream/views/screens/live_stream/live_stream_screen.dart';
+import 'package:live_stream/views/screens/auth/auth_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final service = await AgoraHostService.instance();
+  await setup();
   runApp(MainApp(
-    service: service,
+    service: Locator<AgoraHostService>(),
   ));
 }
 
@@ -25,10 +26,11 @@ class MainApp extends StatelessWidget {
           create: (_) => LiveViewCubit(),
         )
       ],
-      child: MaterialApp(
-        home: LiveStreamScreen(
-          service: service,
-        ),
+      child: const MaterialApp(
+        // home: LiveStreamScreen(
+        //   service: service,
+        // ),
+        home: AuthScreen(),
       ),
     );
   }
