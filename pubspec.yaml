@@ -16,6 +16,14 @@ dependencies:
   starlight_utils:
     git:
       url: https://github.com/YeMyoAung/starlight_utils.git
+  get_it: ^7.6.7
+  firebase_auth: ^4.16.0
+  firebase_core: ^2.24.2
+  firebase_app_check: ^0.2.1+8
+  google_sign_in: ^6.2.1
+  lottie: ^3.0.0
+  community_material_icon: ^5.9.55
+  flutter_facebook_auth: ^6.0.4
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +32,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/lotties/
