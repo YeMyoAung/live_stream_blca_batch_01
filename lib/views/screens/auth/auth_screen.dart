@@ -1,11 +1,10 @@
-import 'dart:developer';
-
 import 'package:community_material_icon/community_material_icon.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:live_stream/locator.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:live_stream/controllers/auth_bloc/auth_bloc.dart';
+import 'package:live_stream/controllers/auth_bloc/auth_event.dart';
+import 'package:live_stream/controllers/auth_bloc/auth_state.dart';
 import 'package:lottie/lottie.dart';
 import 'package:starlight_utils/starlight_utils.dart';
 
@@ -14,29 +13,10 @@ class AuthScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final google = GoogleSignIn.standard();
+    final AuthBloc authBloc = context.read<AuthBloc>();
     final screenWidth = context.width;
     final screenHeight = context.height;
-    // Locator<FirebaseAuth>().currentUser?.getIdToken().then(print);
     return Scaffold(
-      // body: Center(
-      // child: ElevatedButton(
-      //   onPressed: () async {
-      // final GoogleSignInAccount? account = await google.signIn();
-      // final GoogleSignInAuthentication? authentication =
-      //     await account?.authentication;
-      // authentication?.idToken;
-      // // // google.signOut();
-      // // Locator<FirebaseAuth>().signInWithCredential(
-      // //   GoogleAuthProvider.credential(
-      // //       idToken: authentication?.idToken,
-      // //       accessToken: authentication?.accessToken),
-      // // );
-      // Locator<FirebaseAuth>().currentUser?.getIdToken().then(print);
-      //   },
-      //   child: const Text("Login With Google"),
-      // ),
-      // ),
       body: Stack(
         children: [
           Container(
@@ -72,20 +52,7 @@ class AuthScreen extends StatelessWidget {
                   ),
                 )),
                 onPressed: () async {
-                  await google.signOut();
-                  final GoogleSignInAccount? account = await google.signIn();
-                  final GoogleSignInAuthentication? authentication =
-                      await account?.authentication;
-
-                  Locator<FirebaseAuth>().signInWithCredential(
-                    GoogleAuthProvider.credential(
-                      accessToken: authentication?.accessToken,
-                    ),
-                  );
-                  Locator<FirebaseAuth>()
-                      .currentUser
-                      ?.getIdToken()
-                      .then((v) => log(v ?? ""));
+                  authBloc.add(const LoginWithGoogleEvent());
                 },
                 icon: const Icon(CommunityMaterialIcons.google),
                 label: const Text(
@@ -108,24 +75,8 @@ class AuthScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                onPressed: () async {
-                  await Locator<FirebaseAuth>().signOut();
-                  final LoginResult result =
-                      await FacebookAuth.instance.login();
-                  if (result.status == LoginStatus.success) {
-                    final OAuthCredential credential = OAuthCredential(
-                      providerId: "facebook.com",
-                      signInMethod: "facebook.com",
-                      accessToken: result.accessToken!.token,
-                    );
-                    // Once signed in, return the UserCredential
-                    await Locator<FirebaseAuth>()
-                        .signInWithCredential(credential);
-                    Locator<FirebaseAuth>()
-                        .currentUser
-                        ?.getIdToken()
-                        .then((v) => log(v ?? ""));
-                  }
+                onPressed: () {
+                  authBloc.add(const LoginWithFacebookEvent());
                 },
                 icon: const Icon(CommunityMaterialIcons.facebook),
                 label: const Text(
@@ -134,6 +85,21 @@ class AuthScreen extends StatelessWidget {
               ),
             ),
           ),
+          BlocBuilder<AuthBloc, LoginState>(
+            builder: (_, state) {
+              if (state is LoginLoadingState) {
+                return Container(
+                  width: screenWidth,
+                  height: screenHeight,
+                  color: const Color.fromARGB(20, 29, 27, 27),
+                  child: const Center(
+                    child: CupertinoActivityIndicator(),
+                  ),
+                );
+              }
+              return const SizedBox();
+            },
+          )
         ],
       ),
     );
