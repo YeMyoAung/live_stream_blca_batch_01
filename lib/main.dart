@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:live_stream/controllers/live_view_bloc/live_view_cubit.dart';
 import 'package:live_stream/locator.dart';
+import 'package:live_stream/routes/route_name.dart';
+import 'package:live_stream/routes/router.dart';
 import 'package:live_stream/services/agora/base/agora_base_service.dart';
 import 'package:live_stream/services/agora/impl/agora_host_service.dart';
-import 'package:live_stream/views/screens/auth/auth_screen.dart';
+import 'package:live_stream/themes/light_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +15,8 @@ Future<void> main() async {
     service: Locator<AgoraHostService>(),
   ));
 }
+
+final AppLightTheme appLightTheme = AppLightTheme();
 
 class MainApp extends StatelessWidget {
   final AgoraBaseService service;
@@ -26,11 +30,10 @@ class MainApp extends StatelessWidget {
           create: (_) => LiveViewCubit(),
         )
       ],
-      child: const MaterialApp(
-        // home: LiveStreamScreen(
-        //   service: service,
-        // ),
-        home: AuthScreen(),
+      child: MaterialApp(
+        onGenerateRoute: router,
+        theme: appLightTheme.theme,
+        initialRoute: RouteNames.auth,
       ),
     );
   }
