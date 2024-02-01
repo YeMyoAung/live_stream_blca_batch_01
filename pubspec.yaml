@@ -24,6 +24,10 @@ dependencies:
   lottie: ^3.0.0
   community_material_icon: ^5.9.55
   flutter_facebook_auth: ^6.0.4
+  google_nav_bar: ^5.0.6
+  cached_network_image: ^3.3.1
+  dio: ^5.4.0
+  equatable: ^2.0.5
 
 dev_dependencies:
   flutter_test:
