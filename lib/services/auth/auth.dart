@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:live_stream/core/errors/error.dart';
+import 'package:live_stream/core/models/result.dart';
 
 class AuthService {
   final FirebaseAuth _auth;
@@ -11,35 +15,71 @@ class AuthService {
         _googleSignIn = GoogleSignIn.standard(),
         _facebookAuth = FacebookAuth.instance;
 
-  Future<void> loginWithGoogle() async {
-    final GoogleSignInAccount? result = await _googleSignIn.signIn();
-    if (result == null) {
-      //TODO
-      return;
+  User? get currentUser => _auth.currentUser;
+
+  Stream<User?> userChanges() => _auth.userChanges();
+
+  Future<Result<UserCredential>> loginWithGoogle() async {
+    try {
+      final GoogleSignInAccount? result = await _googleSignIn.signIn();
+      if (result == null) {
+        return Result(
+          error: GeneralError("Login Failed", StackTrace.current),
+        );
+      }
+      final GoogleSignInAuthentication auth = await result.authentication;
+
+      final credential = await _loginWithCredentail(
+        GoogleAuthProvider.credential(accessToken: auth.accessToken),
+      );
+      await _googleSignIn.signOut();
+      return credential;
+    } on SocketException catch (e) {
+      return Result(error: GeneralError(e.message));
+    } catch (e) {
+      return Result(error: GeneralError(e.toString()));
     }
-    final GoogleSignInAuthentication auth = await result.authentication;
-    return _loginWithCredentail(
-      GoogleAuthProvider.credential(accessToken: auth.accessToken),
-    );
   }
 
-  Future<void> loginWithFacebook() async {
-    final LoginResult result = await _facebookAuth.login();
-    if (result.status != LoginStatus.success) {
-      //TODO
-      return;
+  Future<Result<UserCredential>> loginWithFacebook() async {
+    try {
+      final LoginResult result = await _facebookAuth.login();
+      if (result.status != LoginStatus.success) {
+        return Result(
+            error: GeneralError(
+          result.message ?? "Login Failed",
+          StackTrace.current,
+        ));
+      }
+      final String? token = result.accessToken?.token;
+      if (token == null) {
+        return Result(error: GeneralError("Login Failed", StackTrace.current));
+      }
+      final credentail = await _loginWithCredentail(
+        FacebookAuthProvider.credential(token),
+      );
+
+      await _facebookAuth.logOut();
+      return credentail;
+    } on SocketException catch (e) {
+      return Result(error: GeneralError(e.message));
+    } catch (e) {
+      return Result(error: GeneralError(e.toString()));
     }
-    final String? token = result.accessToken?.token;
-    if (token == null) {
-      ///TODO
-      return;
-    }
-    return _loginWithCredentail(
-      FacebookAuthProvider.credential(token),
-    );
   }
 
-  Future<void> _loginWithCredentail(OAuthCredential credential) async {
-    _auth.signInWithCredential(credential);
+  Future<Result<UserCredential>> _loginWithCredentail(
+      OAuthCredential credential) async {
+    try {
+      final UserCredential result =
+          await _auth.signInWithCredential(credential);
+      return Result(data: result);
+    } on FirebaseAuthException catch (e) {
+      return Result(error: GeneralError(e.code, e.stackTrace));
+    } on SocketException catch (e) {
+      return Result(error: GeneralError(e.message));
+    } catch (e) {
+      return Result(error: GeneralError(e.toString()));
+    }
   }
 }
