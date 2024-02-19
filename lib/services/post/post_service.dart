@@ -68,15 +68,19 @@ class PostService {
     }
   }
 
+  int tryCount = 0;
+
   Future<Result<List<Post>>> getAllPosts() async {
-    if (!_hasNextPage) {
+    if (!_hasNextPage && tryCount < 2) {
+      tryCount += 1;
       return Result(
         data: [],
       );
     }
+    tryCount = 0;
     final result = await _fetchPost(_page);
 
-    if (result.error != null) {
+    if (result.hasError) {
       return Result(error: result.error);
     }
 

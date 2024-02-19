@@ -10,6 +10,8 @@ abstract class AppStandardTheme {
   Color get cardColor;
   Color get cardFgColor;
 
+  Color get textColor => Colors.white;
+
   ThemeData get ref;
 
   ThemeData get theme => ref.copyWith(
@@ -24,5 +26,9 @@ abstract class AppStandardTheme {
           unselectedItemColor: unselectedColor,
         ),
         cardColor: cardColor,
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: acitveColor,
+          foregroundColor: textColor,
+        ),
       );
 }

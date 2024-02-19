@@ -1,72 +1,66 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:live_stream/models/comment_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:live_stream/controllers/live_stream/base/live_stream_base_bloc.dart';
+import 'package:live_stream/services/ui_live_stream/impl/ui_live_stream_host_service.dart';
+import 'package:live_stream/services/ui_live_stream/model/ui_live_comment.dart';
+import 'package:starlight_utils/starlight_utils.dart';
 
-class LiveComments extends StatefulWidget {
-  final Widget Function(BuildContext context, Comments comment) builder;
+class LiveComments<T extends LiveStreamBaseBloc> extends StatelessWidget {
+  final Widget Function(
+    BuildContext context,
+    UiLiveStreamComment comment,
+  ) builder;
+
   const LiveComments({
     super.key,
     required this.builder,
   });
 
   @override
-  State<LiveComments> createState() => _LiveCommentsState();
-}
-
-class _LiveCommentsState extends State<LiveComments> {
-  final ScrollController controller = ScrollController();
-
-  final List<Comments> data = [];
-
-  late final Stream<List<Comments>> s =
-      Stream.periodic(const Duration(seconds: 3), (v) {
-    data.add(Comments("Hello ${data.length}" * (v + 1)));
-    data.sort((p, c) => c.createdAt.compareTo(p.createdAt));
-    return data;
-  }).asBroadcastStream();
-
-  StreamSubscription? subscription;
-
-  @override
-  void initState() {
-    super.initState();
-    subscription = s.listen((event) {
-      controller.animateTo(0,
-          duration: const Duration(milliseconds: 500), curve: Curves.linear);
-    });
-  }
-
-  @override
-  void dispose() {
-    subscription?.cancel();
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<Comments>>(
-      stream: s,
-      builder: (_, snapshot) {
-        final result = snapshot.data ?? [];
+    final T liveStreamBloc = context.read<T>();
 
-        return ListView.separated(
-          reverse: true,
-          controller: controller,
-          padding: const EdgeInsets.only(
-            bottom: 120,
-            top: 20,
-          ),
-          separatorBuilder: (_, i) => const SizedBox(
-            height: 15,
-          ),
-          itemCount: result.length,
-          itemBuilder: (_, index) {
-            return widget.builder(context, result[index]);
-          },
-        );
+    return PageView(
+      physics: const PageScrollPhysics(),
+      onPageChanged: (index) {
+        if (index == 0) {
+          liveStreamBloc.liveComments;
+        }
       },
+      children: [
+        StreamBuilder<List<UiLiveStreamComment>>(
+          stream: liveStreamBloc.liveComments,
+          builder: (_, snapshot) {
+            final result = snapshot.data ?? [];
+            return ListView.separated(
+              reverse: true,
+              controller: liveStreamBloc.commentScrollController,
+              padding: EdgeInsets.only(
+                bottom:
+                    liveStreamBloc.service is LiveStreamHostService ? 20 : 120,
+                top: 20,
+              ),
+              separatorBuilder: (_, i) => const SizedBox(
+                height: 15,
+              ),
+              itemCount: result.length,
+              itemBuilder: (_, index) {
+                return builder(
+                  context,
+                  result[index],
+                );
+              },
+            );
+          },
+        ),
+        Container(
+          color: const Color.fromRGBO(255, 255, 255, 0.001),
+          width: context.width,
+          height: context.height,
+        )
+      ],
     );
   }
 }

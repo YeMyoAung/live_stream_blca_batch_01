@@ -15,15 +15,7 @@ class AgoraGuestService extends AgoraBaseService {
       ChannelProfileType.channelProfileLiveBroadcasting;
 
   @override
-  VideoViewController get videoViewController => VideoViewController.remote(
-        rtcEngine: engine,
-        canvas: const VideoCanvas(
-          uid: 1860804223,
-        ),
-        connection: const RtcConnection(
-          channelId: "test",
-        ),
-      );
+  VideoViewController get videoViewController => throw UnimplementedError();
 
   @override
   Future<void> dispose() async {

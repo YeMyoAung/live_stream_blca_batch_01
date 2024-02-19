@@ -2,9 +2,11 @@ import 'package:community_material_icon/community_material_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:live_stream/controllers/auth_bloc/auth_bloc.dart';
 import 'package:live_stream/controllers/auth_bloc/auth_event.dart';
 import 'package:live_stream/controllers/auth_bloc/auth_state.dart';
+import 'package:live_stream/routes/route_name.dart';
 import 'package:lottie/lottie.dart';
 import 'package:starlight_utils/starlight_utils.dart';
 
@@ -85,7 +87,17 @@ class AuthScreen extends StatelessWidget {
               ),
             ),
           ),
-          BlocBuilder<AuthBloc, LoginState>(
+          BlocConsumer<AuthBloc, LoginState>(
+            listener: (_, state) {
+              if (state is! LoginSuccessState && state is! LoginErrorState) {
+                return;
+              }
+              if (state is LoginErrorState) {
+                Fluttertoast.showToast(msg: state.message ?? "Unknown");
+                return;
+              }
+              StarlightUtils.pushReplacementNamed(RouteNames.home);
+            },
             builder: (_, state) {
               if (state is LoginLoadingState) {
                 return Container(

@@ -44,7 +44,7 @@ class AgoraHandler {
     required this.onError,
   });
 
-  factory AgoraHandler.fast() {
+  factory AgoraHandler.dummy() {
     return AgoraHandler(
       onJoinChannelSuccess: (_, __) {},
       onUserJoined: (_, __, ___) {},
@@ -59,17 +59,22 @@ class AgoraHandler {
 
 const int _waiting = 0;
 
+///Guest user
 class AgoraLiveConnection {
   final RtcConnection connection;
-  final int remoteId;
+  final int remoteId; //host user id
 
-  const AgoraLiveConnection({required this.connection, required this.remoteId});
+  const AgoraLiveConnection({
+    required this.connection,
+    required this.remoteId,
+  });
 }
 
 abstract class AgoraBaseService {
   final Logger _logger;
 
   late final RtcEngine engine;
+
   AgoraBaseService() : _logger = Logger() {
     engine = createAgoraRtcEngine();
   }
@@ -102,7 +107,7 @@ abstract class AgoraBaseService {
     _state = 1;
   }
 
-  late final RtcEngineEventHandler? _handler;
+  RtcEngineEventHandler? _handler;
 
   ///  assert(1)
   Future<void> ready() async {
@@ -114,19 +119,21 @@ abstract class AgoraBaseService {
     _state = 2;
   }
 
+  String? channel;
+
   /// assert(2)
-  /// TODO api integrate
   Future<void> live(
     String token,
-    String channel, [
-    int? uid,
+    String channel,
+    int uid, [
     ChannelMediaOptions? options,
   ]) async {
     assert(_state == 2);
+    this.channel = channel;
     await engine.joinChannel(
       token: token,
       channelId: channel,
-      uid: uid ?? 0,
+      uid: uid,
       options: options ??
           ChannelMediaOptions(
             token: token,
@@ -136,7 +143,8 @@ abstract class AgoraBaseService {
 
   /// assert(1)
   Future<void> close() async {
-    assert(status == 1);
+    assert(status > 0);
+    _state = 0;
     engine.unregisterEventHandler(_handler!);
     await engine.leaveChannel();
     await engine.release();

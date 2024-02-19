@@ -26,6 +26,7 @@ class AgoraHostService extends AgoraBaseService {
   @override
   Future<void> ready() async {
     await super.ready();
+    // Camera Mode
     await engine.startPreview(
       sourceType: VideoSourceType.videoSourceCameraSecondary,
     );

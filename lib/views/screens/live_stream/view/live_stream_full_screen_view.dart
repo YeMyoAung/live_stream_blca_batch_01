@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:live_stream/models/comment_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:live_stream/controllers/live_stream/base/live_stream_base_bloc.dart';
 import 'package:live_stream/services/agora/base/agora_base_service.dart';
 import 'package:live_stream/services/agora/impl/agora_host_service.dart';
+import 'package:live_stream/services/ui_live_stream/model/ui_live_comment.dart';
 import 'package:live_stream/views/screens/live_stream/live_stream_screen.dart';
 import 'package:live_stream/views/screens/live_stream/view/live_stream_view.dart';
 import 'package:live_stream/views/widgets/live_comments.dart';
@@ -9,7 +11,7 @@ import 'package:live_stream/views/widgets/live_count.dart';
 import 'package:live_stream/views/widgets/live_remark.dart';
 import 'package:starlight_utils/starlight_utils.dart';
 
-Widget _builder(BuildContext context, Comments comment) {
+Widget _builder(BuildContext context, UiLiveStreamComment comment) {
   return CommentBox(
     borderRadius: BorderRadius.circular(8),
     comment: comment,
@@ -20,55 +22,60 @@ Widget _builder(BuildContext context, Comments comment) {
   );
 }
 
-class LiveStreamFullScreenView extends StatelessWidget {
-  final AgoraBaseService service;
+class LiveStreamFullScreenView<T extends LiveStreamBaseBloc>
+    extends StatelessWidget {
   const LiveStreamFullScreenView({
     super.key,
-    required this.service,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bloc = context.read<T>();
+
     final commentHeight = context.height * 0.5;
     final screenWidth = context.width;
-
     return Stack(
       children: [
-        LiveStreamVideo(
-          service: service,
-        ),
+        LiveStreamVideo<T>(),
         Positioned(
           left: 20,
           right: 20,
           top: 30,
-          child: SizedBox(
+          child: Container(
+            height: 50,
+            color: const Color.fromRGBO(0, 0, 0, 0.1),
             width: screenWidth,
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    LiveRemark(),
-                    SizedBox(
+                    const LiveRemark(),
+                    const SizedBox(
                       width: 30,
                     ),
-                    LiveCount(
-                      count: "2.6k",
+                    StreamBuilder(
+                      stream: bloc.service.viewCount,
+                      builder: (_, snap) {
+                        return LiveCount(
+                          count: snap.data?.toString() ?? '0',
+                        );
+                      },
                     ),
                   ],
                 ),
-                LiveViewToggle(),
+                if (bloc.isHost) const LiveEndButton(),
               ],
             ),
           ),
         ),
-        if (service is AgoraHostService)
+        if (bloc.isHost)
           Positioned(
             bottom: 0,
             child: SizedBox(
               width: screenWidth,
               height: commentHeight,
-              child: const LiveComments(
+              child: LiveComments<T>(
                 builder: _builder,
               ),
             ),
@@ -76,7 +83,7 @@ class LiveStreamFullScreenView extends StatelessWidget {
         else
           Positioned(
             bottom: 0,
-            child: CommentSection(
+            child: CommentSection<T>(
               builder: _builder,
               borderRadius: BorderRadius.zero,
               backgroundColor: const Color.fromRGBO(70, 70, 70, 0.1),

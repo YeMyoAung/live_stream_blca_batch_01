@@ -17,6 +17,7 @@ class AuthBloc extends Bloc<LoginEvent, LoginState> {
       emit(const LoginLoadingState());
 
       final result = await _authService.loginWithGoogle();
+
       if (result.hasError) {
         _logger.e(result.error?.stackTrace);
         emit(LoginErrorState(result.error?.message));

@@ -10,6 +10,7 @@ import 'package:starlight_utils/starlight_utils.dart';
 
 class LiveStreamMinizedScreenView extends StatelessWidget {
   final AgoraBaseService service;
+
   const LiveStreamMinizedScreenView({
     super.key,
     required this.service,
@@ -36,9 +37,7 @@ class LiveStreamMinizedScreenView extends StatelessWidget {
               children: [
                 SizedBox(
                   height: screenHeight * 0.3,
-                  child: LiveStreamVideo(
-                    service: service,
-                  ),
+                  child: const LiveStreamVideo(),
                 ),
                 Positioned(
                   bottom: 0,

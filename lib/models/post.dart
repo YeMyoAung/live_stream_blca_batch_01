@@ -1,14 +1,18 @@
 import 'package:equatable/equatable.dart';
 
 class Post extends Equatable {
-  final int id, userId, liveId;
-  final String content, channel, token, status, displayName, profilePhoto;
+  final int id, userId, liveId, likeCount, commentCount, viewCount;
+  final String content, channel, status, displayName, profilePhoto;
+  final String? token;
   final DateTime createdAt;
 
   const Post({
     required this.id,
     required this.userId,
     required this.liveId,
+    required this.likeCount,
+    required this.commentCount,
+    required this.viewCount,
     required this.content,
     required this.channel,
     required this.token,
@@ -23,6 +27,9 @@ class Post extends Equatable {
       id: int.parse(data['id'].toString()),
       userId: int.parse(data['UserID'].toString()),
       liveId: int.parse(data['live']['id'].toString()),
+      likeCount: int.parse(data['live']['like_count'].toString()),
+      commentCount: int.parse(data['live']['comment_count'].toString()),
+      viewCount: int.parse(data['live']['viewer_count'].toString()),
       content: data['content'],
       channel: data['live']['channel'],
       token: data['live']['token'],

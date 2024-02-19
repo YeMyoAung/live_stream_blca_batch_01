@@ -4,7 +4,7 @@ class Result<T> {
   final T? _data;
   final GeneralError? error;
 
-  Result({
+  const Result({
     T? data,
     this.error,
   }) : _data = data;
