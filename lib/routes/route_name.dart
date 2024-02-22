@@ -1,7 +1,8 @@
 class RouteNames {
-  static const String auth = '/auth',
+  static const String auth = "/auth",
       home = "/home",
       view = "/view",
       host = "/host",
-      postCreate = '/posts';
+      postCreate = "/posts",
+      setting = "/setting";
 }

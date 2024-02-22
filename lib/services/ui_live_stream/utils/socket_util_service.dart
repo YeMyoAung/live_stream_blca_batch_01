@@ -7,13 +7,20 @@ import 'package:logger/logger.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SocketUtilsService {
-  static IO.Socket? _socket;
+  String get usage => "live";
+
+  int? socketUserID;
+
+  // static
+  static Map<String, IO.Socket?> _socket = {};
 
   set socket(IO.Socket? socket) {
-    _socket ??= socket;
+    _socket[usage] ??= socket;
   }
 
-  static final Logger _logger = Logger();
+  IO.Socket? get socket => _socket[usage];
+
+  static final Logger logger = Logger();
 
   final AuthService authService = Locator<AuthService>();
 
@@ -24,7 +31,7 @@ class SocketUtilsService {
   int _interval = 500;
 
   Future<T> _runner<T>(Future<T> Function() callback) {
-    _logger.w("SocketRetry: $_failCount");
+    logger.w("SocketRetry: $_failCount");
     return Future.delayed(Duration(milliseconds: _interval), callback);
   }
 
@@ -39,11 +46,11 @@ class SocketUtilsService {
       _failCount = 0;
       return _runner(fail);
     }
-    if (_socket == null) {
+    if (socket == null) {
       _failCount++;
       return _runner(fail);
     }
-    if (_socket?.connected != true) {
+    if (socket?.connected != true) {
       _failCount++;
       return _runner(fail);
     }
@@ -54,33 +61,11 @@ class SocketUtilsService {
 
   ///Listen
   void listen(String event, Function(dynamic) callback) {
-    // if (_failCount > 3) {
-    //   _interval += _interval;
-    //   _failCount = 0;
-    //   return _runner(() => listen(event, callback));
-    // }
-    // if (_socket == null) {
-    //   _failCount++;
-    //   return _runner(() => listen(event, callback));
-    // }
-    // if (_socket?.connected != true) {
-    //   _failCount++;
-    //   return _runner(() => listen(event, callback));
-    // }
-    // if (_listeners.contains(event)) return;
-    // _failCount = 0;
-    // _interval = 1000;
-    // _listeners.add(event);
-    // _socket?.on(event, (v) {
-    //   _logger.i("SocketEvent $event: $v");
-    //   callback(v);
-    // });
-
     _validate(() async {
       ///Success
       _listeners.add(event);
-      _socket?.on(event, (v) {
-        _logger.i("SocketEvent $event: $v");
+      socket?.on(event, (v) {
+        logger.i("SocketEvent $event: $v");
         callback(v);
       });
     }, () async => listen(event, callback));
@@ -88,39 +73,19 @@ class SocketUtilsService {
 
   ///emit
   void emit(String event, dynamic data) {
-    // if (_failCount > 3) {
-    //   _failCount = 0;
-    //   return;
-    // }
-    // if (_socket == null) {
-    //   _failCount++;
-    //   return _runner(() => emit(event, data));
-    // }
-    // if (_socket?.connected != true) {
-    //   _failCount++;
-    //   return _runner(() => emit(event, data));
-    // }
-    // _failCount = 0;
-    // Future.delayed(
-    //   const Duration(seconds: 2),
-    //   () {
-    //     _logger.i("SocketEmit $event: $data");
-    //     _socket?.emit(event, data);
-    //   },
-    // );
     _validate(() async {
       Future.delayed(
         const Duration(seconds: 2),
         () {
-          _logger.i("SocketEmit $event: $data");
-          _socket?.emit(event, data);
+          logger.i("SocketEmit $event: $data");
+          socket?.emit(event, data);
         },
       );
     }, () async => emit(event, data));
   }
 
   Future<void> init() async {
-    if (_socket != null) {
+    if (socket != null) {
       destory();
     }
     final token = await authService.currentUser?.getIdToken();
@@ -137,9 +102,9 @@ class SocketUtilsService {
   }
 
   Future<bool> isSocketReadyFn() async {
-    while (_socket?.connected != true) {
+    while (socket?.connected != true) {
       await Future.delayed(const Duration(seconds: 1));
-      if (_socket?.connected == true) {
+      if (socket?.connected == true) {
         break;
       }
     }
@@ -152,9 +117,9 @@ class SocketUtilsService {
         return true;
       },
       () {
-        if (_socket?.connected != true) {
-          _socket?.disconnect();
-          _socket?.connect();
+        if (socket?.connected != true) {
+          socket?.disconnect();
+          socket?.connect();
         }
         return isSocketReady;
       },
@@ -162,28 +127,30 @@ class SocketUtilsService {
   }
 
   void _defaultEvents() {
-    _socket?.onConnectTimeout((data) {
-      _logger.e("ConnectTimeout $data");
+    socket?.onConnectTimeout((data) {
+      logger.e("ConnectTimeout $data");
     });
-    _socket?.onError((data) {
-      _logger.e("onErrr $data");
+    socket?.onError((data) {
+      logger.e("onError $data");
     });
-    _socket?.onConnectError((data) {
-      _logger.e("onConnectError $data");
+    socket?.onConnectError((data) {
+      logger.e("onConnectError $data");
     });
-    _socket?.onConnect((data) {
-      _logger.i("Connected");
+    socket?.onConnect((data) {
+      logger.i("Connected");
     });
-    _socket?.onConnecting((data) {
-      _logger.i("Connecting");
+    socket?.onConnecting((data) {
+      logger.i("Connecting");
     });
-    _socket?.on("connection", (data) {
-      _logger.i("Connect Msg : $data");
+    socket?.on("connection", (data) {
+      ///User Account Info
+      socketUserID = int.tryParse(data['id'].toString());
+      logger.i("Connect Msg : $data");
     });
   }
 
   void destory() {
-    _socket?.dispose();
+    socket?.dispose();
     socket = null;
   }
 }

@@ -12,6 +12,7 @@ import 'package:live_stream/routes/route_name.dart';
 import 'package:live_stream/services/agora/impl/agora_guest_service.dart';
 import 'package:live_stream/services/agora/impl/agora_host_service.dart';
 import 'package:live_stream/services/auth/auth.dart';
+import 'package:live_stream/services/post/post_service.dart';
 import 'package:live_stream/services/ui_live_stream/impl/ui_live_stream_guest_service.dart';
 import 'package:live_stream/services/ui_live_stream/impl/ui_live_stream_host_service.dart';
 import 'package:live_stream/services/ui_live_stream/model/ui_live_payload.dart';
@@ -19,6 +20,8 @@ import 'package:live_stream/views/screens/auth/auth_screen.dart';
 import 'package:live_stream/views/screens/home/home_screen.dart';
 import 'package:live_stream/views/screens/live_stream/live_stream_screen.dart';
 import 'package:live_stream/views/screens/post_create/post_create_screen.dart';
+
+import '../views/screens/settings/setting_screen.dart';
 
 LiveStreamHostBloc _findHostBloc() {
   final isRegistered = Locator.isRegistered<LiveStreamHostBloc>();
@@ -53,6 +56,11 @@ Route<dynamic>? router(RouteSettings settings) {
   }
 
   switch (settings.name) {
+    case RouteNames.setting:
+      return _routeBuilder(
+        SettingScreen(),
+        settings,
+      );
     case RouteNames.home:
       return _routeBuilder(
         _buildHomePage(),
@@ -132,6 +140,9 @@ Widget _buildHomePage() {
       ),
       BlocProvider(
         create: (_) => PostBloc(),
+      ),
+      BlocProvider(
+        create: (_) => MyPostBloc(),
       )
     ],
     child: const HomeScreen(),

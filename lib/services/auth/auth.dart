@@ -5,11 +5,14 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:live_stream/core/errors/error.dart';
 import 'package:live_stream/core/models/result.dart';
+import 'package:live_stream/routes/route_name.dart';
+import 'package:starlight_utils/starlight_utils.dart';
 
 class AuthService {
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
   final FacebookAuth _facebookAuth;
+
   AuthService()
       : _auth = FirebaseAuth.instance,
         _googleSignIn = GoogleSignIn.standard(),
@@ -80,6 +83,14 @@ class AuthService {
       return Result(error: GeneralError(e.message));
     } catch (e) {
       return Result(error: GeneralError(e.toString()));
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      ///
     }
   }
 }

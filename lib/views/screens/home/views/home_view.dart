@@ -21,7 +21,7 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final homePageBloc = context.read<HomePageBloc>();
-    final PostService postService = Locator<PostService>();
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -35,45 +35,68 @@ class HomeView extends StatelessWidget {
           )
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          StarlightUtils.pushNamed(RouteNames.postCreate);
-        },
-        child: const Icon(Icons.edit),
-      ),
-      body: BlocBuilder<PostBloc, PostBaseState>(
-        builder: (_, state) {
-          final posts = state.posts;
-          if (state is PostLoadingState) {
-            return const Center(
-              child: CupertinoActivityIndicator(),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: postService.refresh,
-            child: ListView.separated(
-              padding: const EdgeInsets.only(bottom: 10),
-              separatorBuilder: (_, i) => const SizedBox(
-                height: 10,
-              ),
-              itemCount: posts.length,
-              itemBuilder: (_, i) {
-                final post = posts[i];
+      floatingActionButton: const CreatePostFloatingActionButton(),
+      body: const ShowPosts<PostBloc>(),
+    );
+  }
+}
 
-                return PostCard(
-                  post: post,
-                );
-              },
-            ),
+class CreatePostFloatingActionButton extends StatelessWidget {
+  const CreatePostFloatingActionButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () {
+        StarlightUtils.pushNamed(RouteNames.postCreate);
+      },
+      child: const Icon(Icons.edit),
+    );
+  }
+}
+
+class ShowPosts<T extends PostBaseBloc> extends StatelessWidget {
+  const ShowPosts({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final postBloc = context.read<T>();
+    return BlocBuilder<T, PostBaseState>(
+      builder: (_, state) {
+        final posts = state.posts;
+        if (state is PostLoadingState) {
+          return const Center(
+            child: CupertinoActivityIndicator(),
           );
-        },
-      ),
+        }
+        return RefreshIndicator(
+          onRefresh: () async {
+            ///
+          },
+          child: ListView.separated(
+            controller: postBloc.scrollController,
+            padding: const EdgeInsets.only(bottom: 10),
+            separatorBuilder: (_, i) => const SizedBox(
+              height: 10,
+            ),
+            itemCount: posts.length,
+            itemBuilder: (_, i) {
+              final post = posts[i];
+
+              return PostCard(
+                post: post,
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
 
 class PostCard extends StatelessWidget {
   final Post post;
+
   const PostCard({super.key, required this.post});
 
   int get contentLength => post.content.length;
@@ -214,6 +237,7 @@ class PostCard extends StatelessWidget {
 class CardActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
+
   const CardActionButton({
     super.key,
     this.icon = Icons.thumb_up,
