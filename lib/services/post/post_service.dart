@@ -8,6 +8,7 @@ import 'package:live_stream/models/post.dart';
 import 'package:live_stream/services/auth/auth.dart';
 import 'package:live_stream/services/ui_live_stream/utils/socket_util_service.dart';
 import 'package:live_stream/utils/const/string.dart';
+import 'package:logger/logger.dart';
 
 class _PostResult<T> {
   final List<T> posts;
@@ -26,7 +27,21 @@ abstract class ApiBaseService<T> extends SocketUtilsService {
 
   final Dio _dio;
   final int _limit;
-  final AuthService _authService = Locator<AuthService>();
+  final AuthService _authService;
+  final Logger logger;
+
+  int _latestPage;
+
+  ApiBaseService({
+    int page = 1,
+    int limit = 20,
+  })  : _latestPage = page,
+        _limit = limit,
+        _dio = locator<Dio>(),
+        _authService = locator<AuthService>(),
+        logger = Logger() {
+    init();
+  }
 
   bool postPredicate(int postOwnerID, int? currentUserID);
 
@@ -41,19 +56,17 @@ abstract class ApiBaseService<T> extends SocketUtilsService {
     });
   }
 
-  ApiBaseService({
-    int page = 1,
-    int limit = 20,
-  })  : _page = page,
-        _limit = limit,
-        _dio = Locator<Dio>() {
-    init();
+  void likeListener(void Function(int postID) callback) {
+    listen("like", (p0) {
+      if (p0['likeUserID'] == socketUserID) {
+        callback(p0['post']['id']);
+      }
+    });
   }
 
-  int _page;
-  bool _hasNextPage = true;
-
   Future<Result<_PostResult<T>>> _fetchPost(int page) async {
+    assert(url.startsWith("http"));
+
     final user = _authService.currentUser;
     if (user == null) {
       return const Result(error: GeneralError("Unauthorized"));
@@ -63,11 +76,25 @@ abstract class ApiBaseService<T> extends SocketUtilsService {
       if (token == null) {
         return const Result(error: GeneralError("Unauthorized"));
       }
-      final response = await _dio.get("$url?page=$page&limit=$_limit",
-          options: Options(headers: {
+
+      final uri = Uri.parse(url);
+
+      final newUri = uri.replace(queryParameters: {
+        ...uri.queryParameters,
+        "page": page.toString(),
+        "limit": _limit.toString(),
+      });
+
+      final response = await _dio.get(
+        newUri.toString(),
+        options: Options(
+          headers: {
             "Authorization": "Bearer $token",
-          }));
+          },
+        ),
+      );
       final body = response.data;
+      logger.i(body);
       final posts = (body['data'] as List).map(parse).toList();
       if (body['next_page'] != null) {
         return Result(data: _PostResult(posts, page + 1));
@@ -91,6 +118,7 @@ abstract class ApiBaseService<T> extends SocketUtilsService {
     }
   }
 
+  bool _hasNextPage = true;
   int tryCount = 0;
 
   Future<Result<List<T>>> getAllPosts() async {
@@ -101,14 +129,14 @@ abstract class ApiBaseService<T> extends SocketUtilsService {
       );
     }
     tryCount = 0;
-    final result = await _fetchPost(_page);
+    final result = await _fetchPost(_latestPage);
 
     if (result.hasError) {
       return Result(error: result.error);
     }
 
     if (result.data.nextPage != null) {
-      _page = result.data.nextPage!;
+      _latestPage = result.data.nextPage!;
     } else {
       _hasNextPage = false;
     }
@@ -123,14 +151,22 @@ abstract class ApiBaseService<T> extends SocketUtilsService {
 
     int? page = 1;
 
+    // latest page 3
+    // page 1 =>  next page = refresh(),stop
+    // page 2 =>
+    // page 3 => next page
+
     while (page != null) {
       final result = await _fetchPost(page);
       if (result.error != null) {
-        return Result(error: result.error);
+        return Result(
+          error: result.error,
+          data: [],
+        );
       }
-      final i = result.data.nextPage;
-      if (i != null && _page > i) {
-        page = i;
+      final nextPage = result.data.nextPage;
+      if (nextPage != null && _latestPage > nextPage) {
+        page = nextPage;
       } else {
         page = null;
       }
@@ -141,6 +177,31 @@ abstract class ApiBaseService<T> extends SocketUtilsService {
       data: posts,
     );
   }
+
+  Future<void> like(int id) async {
+    final uri = Uri.parse(url);
+    final likeUri = uri.replace(
+      pathSegments: [
+        ...uri.pathSegments,
+        id.toString(),
+        "like",
+      ],
+      query: "",
+    );
+    try {
+      await _dio.post(
+        likeUri.toString(),
+        options: Options(
+          headers: {
+            "Authorization":
+                "Bearer ${await _authService.currentUser?.getIdToken()}",
+          },
+        ),
+      );
+    } catch (e) {
+      ///
+    }
+  }
 }
 
 class PostService extends ApiBaseService<Post> {
@@ -148,7 +209,7 @@ class PostService extends ApiBaseService<Post> {
   String get usage => 'posts';
 
   @override
-  String get url => POST_BASE_URL;
+  String get url => postBaseUrl;
 
   @override
   parse(data) {
@@ -166,7 +227,34 @@ class MyPostService extends ApiBaseService<Post> {
   String get usage => 'my_posts';
 
   @override
-  String get url => MY_POST_BASE_URL;
+  String get url => myPostBaseUrl;
+
+  @override
+  parse(data) {
+    return Post.fromJson(data);
+  }
+
+  @override
+  bool postPredicate(int postOwnerID, int? currentUserID) {
+    return postOwnerID == currentUserID;
+  }
+}
+
+class SearchPostService extends ApiBaseService<Post> {
+  @override
+  String get usage => 'search_posts';
+
+  String _search = "";
+
+  set search(String value) {
+    _search = value;
+    _latestPage = 1;
+    _hasNextPage = true;
+    tryCount = 0;
+  }
+
+  @override
+  String get url => "$postBaseUrl?search=$_search";
 
   @override
   parse(data) {

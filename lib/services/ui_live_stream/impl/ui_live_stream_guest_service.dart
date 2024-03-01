@@ -13,19 +13,19 @@ class LiveStreamGuestService extends LiveStreamBaseService {
       final isJoined = int.parse(p0.toString()) == 200;
       setLiveStreamStatus(isJoined);
       if (isJoined) {
-        comsumeLiveEvent();
+        consumeLiveEvent();
       }
     });
   }
 
-  Future<Result<dynamic>> genereteToken(int liveID, String channel) async {
+  Future<Result<dynamic>> generateToken(int liveID, String channel) async {
     try {
       final token = await authService.currentUser?.getIdToken();
       if (token == null) {
-        return Result(error: GeneralError("Unauthorized"));
+        return const Result(error: GeneralError("Unauthorized"));
       }
       final response = await dio.post(
-        '$POST_BASE_URL/$liveID/join',
+        '$postBaseUrl/$liveID/join',
         options: Options(headers: {
           "Authorization": 'Bearer $token',
         }),

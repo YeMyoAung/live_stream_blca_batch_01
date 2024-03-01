@@ -4,7 +4,9 @@ import 'package:live_stream/locator.dart';
 import 'package:live_stream/services/auth/auth.dart';
 import 'package:live_stream/utils/const/string.dart';
 import 'package:logger/logger.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as socket_io;
+
+const Duration _interval = Duration(milliseconds: 500);
 
 class SocketUtilsService {
   String get usage => "live";
@@ -12,27 +14,28 @@ class SocketUtilsService {
   int? socketUserID;
 
   // static
-  static Map<String, IO.Socket?> _socket = {};
+  static final Map<String, socket_io.Socket?> _socket = {};
 
-  set socket(IO.Socket? socket) {
+  set socket(socket_io.Socket? socket) {
     _socket[usage] ??= socket;
   }
 
-  IO.Socket? get socket => _socket[usage];
+  socket_io.Socket? get socket {
+    final s = _socket[usage];
+    return s;
+  }
 
   static final Logger logger = Logger();
 
-  final AuthService authService = Locator<AuthService>();
+  final AuthService authService = locator<AuthService>();
 
   final List<String> _listeners = [];
 
   int get listenerCount => _listeners.length;
 
-  int _interval = 500;
-
   Future<T> _runner<T>(Future<T> Function() callback) {
     logger.w("SocketRetry: $_failCount");
-    return Future.delayed(Duration(milliseconds: _interval), callback);
+    return Future.delayed(_interval, callback);
   }
 
   int _failCount = 0;
@@ -42,7 +45,7 @@ class SocketUtilsService {
     Future<T> Function() fail,
   ) {
     if (_failCount > 3) {
-      _interval += _interval;
+      // _interval += _interval;
       _failCount = 0;
       return _runner(fail);
     }
@@ -55,44 +58,50 @@ class SocketUtilsService {
       return _runner(fail);
     }
     _failCount = 0;
-    _interval = 500;
+    // _interval = 500;
     return run();
   }
 
   ///Listen
   void listen(String event, Function(dynamic) callback) {
-    _validate(() async {
-      ///Success
-      _listeners.add(event);
-      socket?.on(event, (v) {
-        logger.i("SocketEvent $event: $v");
-        callback(v);
-      });
-    }, () async => listen(event, callback));
+    _validate(
+      () async {
+        ///Success
+        _listeners.add("${usage}_$event");
+        socket?.on(event, (v) {
+          logger.i("SocketEvent $event: $v");
+          callback(v);
+        });
+      },
+      () async => listen(event, callback),
+    );
   }
 
   ///emit
   void emit(String event, dynamic data) {
-    _validate(() async {
-      Future.delayed(
-        const Duration(seconds: 2),
-        () {
-          logger.i("SocketEmit $event: $data");
-          socket?.emit(event, data);
-        },
-      );
-    }, () async => emit(event, data));
+    _validate(
+      () async {
+        Future.delayed(
+          const Duration(seconds: 2),
+          () {
+            logger.i("SocketEmit $event: $data");
+            socket?.emit(event, data);
+          },
+        );
+      },
+      () async => emit(event, data),
+    );
   }
 
   Future<void> init() async {
     if (socket != null) {
-      destory();
+      close();
     }
     final token = await authService.currentUser?.getIdToken();
 
-    socket = IO.io(
-      BASE_URL,
-      IO.OptionBuilder()
+    socket = socket_io.io(
+      baseUrl,
+      socket_io.OptionBuilder()
           .setTransports(['websocket'])
           .setExtraHeaders({'Authorization': 'Bearer $token'})
           .enableAutoConnect()
@@ -149,7 +158,7 @@ class SocketUtilsService {
     });
   }
 
-  void destory() {
+  void close() {
     socket?.dispose();
     socket = null;
   }

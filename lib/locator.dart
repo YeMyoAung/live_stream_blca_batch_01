@@ -1,39 +1,54 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:live_stream/firebase_options.dart';
 import 'package:live_stream/services/agora/impl/agora_guest_service.dart';
 import 'package:live_stream/services/agora/impl/agora_host_service.dart';
 import 'package:live_stream/services/auth/auth.dart';
+import 'package:live_stream/services/firebase/firestore.dart';
 import 'package:live_stream/services/post/post_service.dart';
+import 'package:image_picker/image_picker.dart';
 
-GetIt Locator = GetIt.asNewInstance();
+GetIt locator = GetIt.asNewInstance();
 
 Future<void> setup() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
   );
 
-  Locator.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
-  final agoraHostService = await AgoraHostService.instance();
+  locator.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
 
-  Locator.registerLazySingleton<AgoraHostService>(() => agoraHostService);
+  locator.registerLazySingleton(() => FirebaseStorage.instance);
 
-  final agoraGuestService = await AgoraGuestService.instance();
+  locator.registerLazySingleton(() => FirebaseFirestore.instance);
 
-  Locator.registerLazySingleton<AgoraGuestService>(() => agoraGuestService);
-
-  Locator.registerLazySingleton(() => AuthService());
+  locator.registerLazySingleton(() => ImagePicker());
 
   final Dio dio = Dio();
 
-  Locator.registerLazySingleton(() => dio);
+  locator.registerLazySingleton(() => dio);
 
-  Locator.registerLazySingleton(() => PostService());
-  Locator.registerLazySingleton(() => MyPostService());
+  locator.registerLazySingleton(() => AuthService());
+
+  locator.registerLazySingleton(() => SettingService());
+
+  final agoraHostService = await AgoraHostService.instance();
+
+  locator.registerLazySingleton<AgoraHostService>(() => agoraHostService);
+
+  final agoraGuestService = await AgoraGuestService.instance();
+
+  locator.registerLazySingleton<AgoraGuestService>(() => agoraGuestService);
+
+  locator.registerLazySingleton(() => PostService());
+  locator.registerLazySingleton(() => MyPostService());
+  locator.registerLazySingleton(() => SearchPostService());
 }

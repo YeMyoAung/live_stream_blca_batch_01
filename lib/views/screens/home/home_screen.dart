@@ -14,14 +14,19 @@ class HomeScreen extends StatelessWidget {
     final homePageBloc = context.read<HomePageBloc>();
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: PageView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        // onPageChanged: (page) {
+        //   homePageBloc.add(OnScrollEvent(page));
+        // },
         controller: homePageBloc.controller,
         itemCount: 3,
         itemBuilder: (_, i) {
-          return [
-            const HomeView(),
-            const SearchView(), //Search View
-            const ProfileView(), // Profile View
+          return const [
+            HomeView(),
+            SearchView(), //Search View
+            ProfileView(), // Profile View
           ][i];
         },
       ),

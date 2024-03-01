@@ -7,7 +7,8 @@ class HomePageBloc extends Bloc<HomePageEvent, int> {
   static const Duration _duration = Duration(milliseconds: 300);
   static const Curve _curve = Curves.linear;
 
-  void _goTo(int index) {
+  void _goTo(int index, Emitter<int> emit) {
+    emit(index);
     controller.animateToPage(
       index,
       duration: _duration,
@@ -19,18 +20,19 @@ class HomePageBloc extends Bloc<HomePageEvent, int> {
       : controller = PageController(),
         super(0) {
     on<GoToHomePageEvent>((_, emit) {
-      emit(0);
-      _goTo(0);
+      _goTo(0, emit);
     });
 
     on<GoToSearchPageEvent>((_, emit) {
-      emit(1);
-      _goTo(1);
+      _goTo(1, emit);
     });
 
     on<GoToProfilePageEvent>((_, emit) {
-      emit(2);
-      _goTo(2);
+      _goTo(2, emit);
+    });
+
+    on<OnScrollEvent>((event, emit) {
+      _goTo(event.index, emit);
     });
   }
 

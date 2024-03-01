@@ -6,39 +6,50 @@ import 'package:live_stream/services/auth/auth.dart';
 import 'package:logger/logger.dart';
 
 class AuthBloc extends Bloc<LoginEvent, LoginState> {
-  final AuthService _authService = Locator<AuthService>();
+  final AuthService _authService = locator<AuthService>();
 
   static final Logger _logger = Logger();
 
   AuthBloc() : super(const LoginInitialState()) {
     // Login With Google
-    on<LoginWithGoogleEvent>((_, emit) async {
-      if (state is LoginLoadingState) return;
-      emit(const LoginLoadingState());
+    on<LoginWithGoogleEvent>(_loginWithGoogleEventHandler);
 
-      final result = await _authService.loginWithGoogle();
-
-      if (result.hasError) {
-        _logger.e(result.error?.stackTrace);
-        emit(LoginErrorState(result.error?.message));
-        return;
-      }
-
-      emit(const LoginSuccessState());
-    });
     // Login With Facebook
-    on<LoginWithFacebookEvent>((_, emit) async {
-      if (state is LoginLoadingState) return;
-      emit(const LoginLoadingState());
+    on<LoginWithFacebookEvent>(_loginWithFacebookEventHandler);
+  }
 
-      final result = await _authService.loginWithFacebook();
-      if (result.hasError) {
-        _logger.e(result.error?.stackTrace);
-        emit(LoginErrorState(result.error?.message));
-        return;
-      }
+  Future<void> _loginWithGoogleEventHandler(
+    LoginWithGoogleEvent _,
+    Emitter<LoginState> emit,
+  ) async {
+    if (state is LoginLoadingState) return;
+    emit(const LoginLoadingState());
 
-      emit(const LoginSuccessState());
-    });
+    final result = await _authService.loginWithGoogle();
+
+    if (result.hasError) {
+      _logger.e(result.error?.stackTrace);
+      emit(LoginErrorState(result.error?.message));
+      return;
+    }
+
+    emit(const LoginSuccessState());
+  }
+
+  Future<void> _loginWithFacebookEventHandler(
+    LoginWithFacebookEvent _,
+    Emitter<LoginState> emit,
+  ) async {
+    if (state is LoginLoadingState) return;
+    emit(const LoginLoadingState());
+
+    final result = await _authService.loginWithFacebook();
+    if (result.hasError) {
+      _logger.e(result.error?.stackTrace);
+      emit(LoginErrorState(result.error?.message));
+      return;
+    }
+
+    emit(const LoginSuccessState());
   }
 }

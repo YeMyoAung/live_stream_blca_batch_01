@@ -17,14 +17,16 @@ class UiLiveStreamComment {
   });
 
   factory UiLiveStreamComment.fromJson(dynamic data) {
+    final user = data['user'];
     return UiLiveStreamComment(
-      id: int.parse(data['id'].toString()), //data['id'] as int
+      id: int.parse(data['id'].toString()),
+      //data['id'] as int
       liveId: int.parse(data['live_id'].toString()),
-      userId: int.parse(data['user']['Uid'].toString()),
+      userId: int.parse(user['Uid'].toString()),
       comment: data['comment'],
-      identity: data['user']['Identifier'],
-      displayName: data['user']['DisplayName'],
-      profilePhoto: data['user']['ProfilePhoto'],
+      identity: user['Identifier'],
+      displayName: user['DisplayName'],
+      profilePhoto: user['ProfilePhoto'],
       createdAt: DateTime.parse(data['created_at']),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:live_stream/controllers/live_stream/base/live_stream_base_state.dart';
 
-class LiveStreamContentCreateInitalState extends LiveStreamBaseState {
-  const LiveStreamContentCreateInitalState();
+class LiveStreamContentCreateInitialState extends LiveStreamBaseState {
+  const LiveStreamContentCreateInitialState();
 }
 
 class LiveStreamContentCreateLoadingState extends LiveStreamBaseState {
@@ -14,5 +14,6 @@ class LiveStreamContentCreateSuccessState extends LiveStreamBaseState {
 
 class LiveStreamContentCreateErrorState extends LiveStreamBaseState {
   final String message;
+
   const LiveStreamContentCreateErrorState(this.message);
 }

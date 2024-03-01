@@ -13,7 +13,7 @@ import 'package:live_stream/utils/dialog/error_dialog.dart';
 import 'package:starlight_utils/starlight_utils.dart';
 
 abstract class LiveStreamBaseService extends SocketUtilsService {
-  final Dio dio = Locator<Dio>();
+  final Dio dio = locator<Dio>();
 
   // User Join / Host Status
   final StreamController<bool?> _stream = StreamController.broadcast();
@@ -68,7 +68,6 @@ abstract class LiveStreamBaseService extends SocketUtilsService {
   final List<UiLiveStreamComment> _userComments = [];
 
   void setComments(dynamic comment) {
-    print(comment.runtimeType);
     if (comment is List<UiLiveStreamComment>) {
       _comments.sink.add(_userComments);
       return;
@@ -78,12 +77,12 @@ abstract class LiveStreamBaseService extends SocketUtilsService {
     _comments.sink.add(_userComments);
   }
 
-  void comsumeLiveEvent() {
-    super.listen("viewCount", (p0) {
+  void consumeLiveEvent() {
+    listen("viewCount", (p0) {
       setViewerCount(int.parse(p0.toString()));
     });
-    super.listen("liveComment", setComments);
-    super.listen("end", (p0) async {
+    listen("liveComment", setComments);
+    listen("end", (p0) async {
       await showErrorDialog("End", "Live is over");
       StarlightUtils.pushReplacementNamed(RouteNames.home);
     });
@@ -93,10 +92,10 @@ abstract class LiveStreamBaseService extends SocketUtilsService {
     try {
       final String? token = await authService.currentUser?.getIdToken();
       if (token == null) {
-        return Result(error: GeneralError("Unauthorized"));
+        return const Result(error: GeneralError("Unauthorized"));
       }
       await dio.post(
-        "$POST_BASE_URL/$liveID/comment",
+        "$postBaseUrl/$liveID/comment",
         data: FormData.fromMap({
           'comment': comment,
         }),
@@ -108,7 +107,6 @@ abstract class LiveStreamBaseService extends SocketUtilsService {
     } on SocketException catch (e) {
       return Result(error: GeneralError(e.message));
     } on DioException catch (e) {
-      ///{'error':'ajsfklasjf'}
       return Result(
         error: GeneralError(
           e.response?.data?['error']?.toString() ??
@@ -128,6 +126,6 @@ abstract class LiveStreamBaseService extends SocketUtilsService {
     _viewCount.close();
     _comments.close();
     _userJoin.close();
-    destory();
+    close();
   }
 }

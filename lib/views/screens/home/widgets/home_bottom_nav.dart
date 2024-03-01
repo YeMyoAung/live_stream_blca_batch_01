@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:community_material_icon/community_material_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +7,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:live_stream/controllers/home/home_page_bloc.dart';
 import 'package:live_stream/locator.dart';
 import 'package:live_stream/services/auth/auth.dart';
+import 'package:live_stream/views/widgets/network_profile.dart';
 import 'package:starlight_utils/starlight_utils.dart';
 
 class HomeBottomNav extends StatelessWidget {
@@ -17,9 +17,10 @@ class HomeBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final bottomNavTheme = theme.bottomNavigationBarTheme;
-    final authService = Locator<AuthService>();
+    final authService = locator<AuthService>();
     final homePageBloc = context.read<HomePageBloc>();
     authService.currentUser?.getIdToken().then((v) => log(v ?? ""));
+
     return GNav(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -45,7 +46,7 @@ class HomeBottomNav extends StatelessWidget {
         ),
         GButton(
           icon: Icons.person,
-          textColor: bottomNavTheme.unselectedItemColor,
+          // textColor: bottomNavTheme.unselectedItemColor,
           leading: StreamBuilder(
             stream: authService.userChanges(),
             builder: (_, snap) {
@@ -56,10 +57,12 @@ class HomeBottomNav extends StatelessWidget {
                   child: Icon(Icons.person),
                 );
               }
-              return CircleAvatar(
-                radius: 20,
-                backgroundImage: CachedNetworkImageProvider(
-                  url,
+              return NetworkProfile(
+                profileUrl: url,
+                radius: null,
+                onFail: const CircleAvatar(
+                  radius: 20,
+                  child: Icon(Icons.person),
                 ),
               );
             },

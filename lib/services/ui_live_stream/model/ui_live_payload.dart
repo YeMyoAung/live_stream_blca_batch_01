@@ -13,11 +13,12 @@ class LivePayload extends Equatable {
   });
 
   factory LivePayload.fromJson(dynamic data) {
+    final live = data['live'];
     return LivePayload(
       userID: int.parse(data['UserID'].toString()),
-      liveID: int.parse(data['live']['id'].toString()),
-      channel: data['live']['channel'],
-      token: data['live']['token'],
+      liveID: int.parse(live['id'].toString()),
+      channel: live['channel'],
+      token: live['token'],
     );
   }
 

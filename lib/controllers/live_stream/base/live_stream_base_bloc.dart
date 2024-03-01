@@ -4,15 +4,14 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:live_stream/services/agora/base/agora_base_service.dart';
+import 'package:live_stream/services/agora/impl/agora_host_service.dart';
 import 'package:live_stream/services/ui_live_stream/base/ui_live_stream_base_service.dart';
+import 'package:live_stream/services/ui_live_stream/model/ui_live_comment.dart';
 import 'package:live_stream/services/ui_live_stream/model/ui_live_payload.dart';
 
-import '../../../services/agora/impl/agora_host_service.dart';
-import '../../../services/ui_live_stream/model/ui_live_comment.dart';
 import 'live_stream_base_event.dart';
 
-abstract class LiveStreamBaseBloc<E extends LiveStreamBaseEvent, S>
-    extends Bloc<E, S> {
+abstract class LiveStreamBaseBloc<S> extends Bloc<LiveStreamBaseEvent, S> {
   bool get isHost => agoraService is AgoraHostService;
 
   AgoraLiveConnection? get guestLiveStreamLastConnection =>
@@ -35,27 +34,35 @@ abstract class LiveStreamBaseBloc<E extends LiveStreamBaseEvent, S>
   StreamSubscription? _streamStatusSubscription;
 
   LiveStreamBaseBloc(super.initialState, this.service, this.agoraService) {
-    ///Socket Status (Connect, Disconnect)
-    connect();
+    on<LiveStreamInitEvent>((_, emit) async {
+      ///Socket Status (Connect, Disconnect)
+      connect(emit);
 
-    ///LiveStreamSocketConnectEvent
-    defaultSocketConnection();
+      ///LiveStreamSocketConnectEvent
+      defaultSocketConnection();
 
-    handler = AgoraHandler.dummy();
-    _streamStatusSubscription =
-        service.streamStatus.listen(_streamStatusListener);
+      handler = AgoraHandler.dummy();
+
+      _streamStatusSubscription = service.streamStatus.listen((value) {
+        _streamStatusListener(value, emit);
+      });
+      await _streamStatusSubscription?.asFuture();
+    });
+
+    add(const LiveStreamInitEvent());
   }
 
-  void connect() {
-    service.isSocketReady.then(readyState).timeout(const Duration(seconds: 5),
-        onTimeout: () {
-      readyState(false);
+  Future<void> connect(Emitter emit) async {
+    return service.isSocketReady
+        .then((v) => readyState(v, emit))
+        .timeout(const Duration(seconds: 5), onTimeout: () {
+      readyState(false, emit);
     });
   }
 
   void defaultSocketConnection();
 
-  void readyState(bool value);
+  void readyState(bool value, Emitter emit);
 
   StreamSubscription? _commentStreamSubscription;
 
@@ -87,7 +94,7 @@ abstract class LiveStreamBaseBloc<E extends LiveStreamBaseEvent, S>
     );
   }
 
-  void _streamStatusListener(bool? value) {
+  void _streamStatusListener(bool? value, Emitter<S> emit) {
     final newState = streamStatusListener(value);
     if (newState == null) return;
     emit(newState);

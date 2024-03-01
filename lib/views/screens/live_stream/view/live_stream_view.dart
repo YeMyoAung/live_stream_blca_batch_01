@@ -2,8 +2,6 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:live_stream/controllers/live_stream/base/live_stream_base_bloc.dart';
-import 'package:live_stream/services/agora/base/agora_base_service.dart';
-import 'package:live_stream/services/agora/impl/agora_host_service.dart';
 
 ///Stateless
 class LiveStreamVideo<T extends LiveStreamBaseBloc> extends StatelessWidget {

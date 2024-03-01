@@ -20,31 +20,31 @@ import 'package:live_stream/views/screens/auth/auth_screen.dart';
 import 'package:live_stream/views/screens/home/home_screen.dart';
 import 'package:live_stream/views/screens/live_stream/live_stream_screen.dart';
 import 'package:live_stream/views/screens/post_create/post_create_screen.dart';
-
-import '../views/screens/settings/setting_screen.dart';
+import 'package:live_stream/views/screens/settings/profile_setting_screen.dart';
+import 'package:live_stream/views/screens/settings/setting_screen.dart';
 
 LiveStreamHostBloc _findHostBloc() {
-  final isRegistered = Locator.isRegistered<LiveStreamHostBloc>();
+  final isRegistered = locator.isRegistered<LiveStreamHostBloc>();
   if (isRegistered) {
-    Locator.resetLazySingleton<LiveStreamHostBloc>(
+    locator.resetLazySingleton<LiveStreamHostBloc>(
       disposingFunction: (bloc) {
         return bloc.close();
       },
     );
   } else {
-    Locator.registerLazySingleton(
+    locator.registerLazySingleton(
       () => LiveStreamHostBloc(
         LiveStreamHostService(),
-        Locator<AgoraHostService>(),
+        locator<AgoraHostService>(),
       ),
     );
   }
 
-  return Locator<LiveStreamHostBloc>();
+  return locator<LiveStreamHostBloc>();
 }
 
 Route<dynamic>? router(RouteSettings settings) {
-  final isGuest = Locator<AuthService>().currentUser == null;
+  final isGuest = locator<AuthService>().currentUser == null;
   if (isGuest) {
     return _routeBuilder(
       BlocProvider(
@@ -56,9 +56,14 @@ Route<dynamic>? router(RouteSettings settings) {
   }
 
   switch (settings.name) {
+    case RouteNames.profileSetting:
+      return _routeBuilder(
+        const ProfileSettingScreen(),
+        settings,
+      );
     case RouteNames.setting:
       return _routeBuilder(
-        SettingScreen(),
+        const SettingScreen(),
         settings,
       );
     case RouteNames.home:
@@ -83,10 +88,10 @@ Route<dynamic>? router(RouteSettings settings) {
       //   );
       // }
 
-      if (!Locator.isRegistered<LiveStreamHostBloc>()) {
+      if (!locator.isRegistered<LiveStreamHostBloc>()) {
         return _routeBuilder(const BadRequest(), settings);
       }
-      final value = Locator<LiveStreamHostBloc>();
+      final value = locator<LiveStreamHostBloc>();
       return _routeBuilder(
         MultiBlocProvider(
           providers: [
@@ -115,7 +120,7 @@ Route<dynamic>? router(RouteSettings settings) {
               create: (_) => LiveStreamGuestBloc(
                 value,
                 LiveStreamGuestService(),
-                Locator<AgoraGuestService>(),
+                locator<AgoraGuestService>(),
               ),
             )
           ],
@@ -143,6 +148,9 @@ Widget _buildHomePage() {
       ),
       BlocProvider(
         create: (_) => MyPostBloc(),
+      ),
+      BlocProvider(
+        create: (_) => SearchBloc(locator<SearchPostService>()),
       )
     ],
     child: const HomeScreen(),

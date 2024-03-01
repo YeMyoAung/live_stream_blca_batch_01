@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:live_stream/controllers/posts/post_bloc.dart';
 import 'package:live_stream/routes/route_name.dart';
-import 'package:live_stream/views/screens/home/views/home_view.dart';
+import 'package:live_stream/views/screens/home/widgets/post_create_floating_action_button.dart';
+import 'package:live_stream/views/screens/home/widgets/show_posts.dart';
 import 'package:starlight_utils/starlight_utils.dart';
+
+void _goToSettingPage() {
+  StarlightUtils.pushNamed(RouteNames.setting);
+}
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -14,12 +19,10 @@ class ProfileView extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text("Profile"),
-        actions: [
+        actions: const [
           IconButton(
-            onPressed: () {
-              StarlightUtils.pushNamed(RouteNames.setting);
-            },
-            icon: const Icon(Icons.settings),
+            onPressed: _goToSettingPage,
+            icon: Icon(Icons.settings),
           ),
         ],
       ),

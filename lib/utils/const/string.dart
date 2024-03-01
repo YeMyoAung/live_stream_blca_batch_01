@@ -1,13 +1,9 @@
-const BASE_URL = "http://143.198.87.85:8080";
-// const BASE_URL = "http://192.168.31.251:8080";
-const POST_BASE_URL = "$BASE_URL/api/v1/live";
-const MY_POST_BASE_URL = "$POST_BASE_URL/me";
+const String baseUrl = "http://143.198.87.85:8080";
 
-///
-/// Widget => Widget
-///
-/// Controller => State Management (Bloc,Getx,Provider)
-///
-/// Business Logic => Service
-///
-///
+const String postBaseUrl = "$baseUrl/api/v1/live";
+
+const String myPostBaseUrl = "$postBaseUrl/me";
+
+const double kSearchHeight = 60.0;
+
+const entryKey = 4294967309;

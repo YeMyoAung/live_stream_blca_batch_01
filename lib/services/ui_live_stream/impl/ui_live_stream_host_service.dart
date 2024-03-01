@@ -15,7 +15,7 @@ class LiveStreamHostService extends LiveStreamBaseService {
       final isStarted = int.parse(p0.toString()) == 200;
       setLiveStreamStatus(isStarted);
       if (isStarted) {
-        comsumeLiveEvent();
+        consumeLiveEvent();
       }
     });
   }
@@ -24,10 +24,10 @@ class LiveStreamHostService extends LiveStreamBaseService {
     try {
       final String? token = await authService.currentUser?.getIdToken();
       if (token == null) {
-        return Result(error: GeneralError("Unauthorized"));
+        return const Result(error: GeneralError("Unauthorized"));
       }
       final response = await dio.post(
-        POST_BASE_URL,
+        postBaseUrl,
         options: Options(
           headers: {"Authorization": "Bearer $token"},
         ),
@@ -58,9 +58,9 @@ class LiveStreamHostService extends LiveStreamBaseService {
     try {
       final String? token = await authService.currentUser?.getIdToken();
       if (token == null) {
-        return Result(error: GeneralError("Unauthorized"));
+        return const Result(error: GeneralError("Unauthorized"));
       }
-      await dio.post('$POST_BASE_URL/$liveID/end',
+      await dio.post('$postBaseUrl/$liveID/end',
           options: Options(headers: {
             'Authorization': 'Bearer $token',
           }));

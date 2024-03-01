@@ -4,6 +4,9 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../../locator.dart';
+import '../../firebase/firestore.dart';
+
 Future requestPermission() async {
   final List<Permission> requiredPermissions = [];
 
@@ -71,13 +74,14 @@ class AgoraLiveConnection {
 }
 
 abstract class AgoraBaseService {
+  final RtcEngine engine;
   final Logger _logger;
+  final SettingService settingService;
 
-  late final RtcEngine engine;
-
-  AgoraBaseService() : _logger = Logger() {
-    engine = createAgoraRtcEngine();
-  }
+  AgoraBaseService()
+      : _logger = Logger(),
+        settingService = locator<SettingService>(),
+        engine = createAgoraRtcEngine();
 
   String get appId;
 
@@ -109,14 +113,37 @@ abstract class AgoraBaseService {
 
   RtcEngineEventHandler? _handler;
 
+  bool _withSound = true;
+  final StreamController<bool> _audioMode = StreamController.broadcast();
+
+  Stream<bool> get audioMode => _audioMode.stream;
+
   ///  assert(1)
   Future<void> ready() async {
     assert(status == 1 && _handler != null);
     engine.registerEventHandler(_handler!);
     await engine.setClientRole(role: role);
+    final setting = await settingService.read();
     await engine.enableVideo();
-    await engine.enableAudio();
+    if (role == ClientRoleType.clientRoleAudience) {
+      _withSound = setting.withSound;
+      await audio();
+    }
     _state = 2;
+  }
+
+  Future<void> audio() async {
+    _audioMode.sink.add(_withSound);
+    if (_withSound) {
+      await engine.enableAudio();
+    } else {
+      await engine.disableAudio();
+    }
+  }
+
+  Future<void> audioToggle() async {
+    _withSound = !_withSound;
+    await audio();
   }
 
   String? channel;
@@ -145,19 +172,21 @@ abstract class AgoraBaseService {
   Future<void> close() async {
     assert(status > 0);
     _state = 0;
+    _withSound = true;
     engine.unregisterEventHandler(_handler!);
     await engine.leaveChannel();
     await engine.release();
   }
 
-  Future<void> dispose();
+  Future<void> dispose() async {
+    await _audioMode.close();
+  }
 
   AgoraLiveConnection? connection;
 
   StreamController<AgoraLiveConnection?> onLive =
       StreamController<AgoraLiveConnection?>.broadcast();
 
-  /// TODO Api Integrate
   set handler(AgoraHandler h) {
     _handler = RtcEngineEventHandler(
       //Live Start
@@ -168,14 +197,14 @@ abstract class AgoraBaseService {
         h.onUserJoined(conn, remoteUid, _);
       },
       //Live Stop
-      //TODO: Sec 30
+
       onUserOffline: (conn, uid, reason) {
         _logger.d(
             "[stream:onUserOffline] [conn] $conn\n[uid] $uid\n[reason] $reason");
         h.onUserOffline(conn, uid, reason);
       },
       //Live Stop
-      ///TODO: Sec 30
+
       onTokenPrivilegeWillExpire: (conn, token) {
         _logger.d(
             "[stream:onTokenPrivilegeWillExpire] [conn] $conn\n[token] $token");

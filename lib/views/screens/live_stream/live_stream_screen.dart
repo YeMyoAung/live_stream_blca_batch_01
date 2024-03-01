@@ -7,11 +7,8 @@ import 'package:live_stream/controllers/live_stream/base/live_stream_base_state.
 import 'package:live_stream/controllers/live_stream/impl/guest/live_stream_guest_bloc.dart';
 import 'package:live_stream/controllers/live_stream/impl/guest/live_stream_guest_event.dart';
 import 'package:live_stream/controllers/live_stream/impl/guest/live_stream_guest_state.dart';
-import 'package:live_stream/controllers/live_stream/impl/host/live_stream_host_bloc.dart';
-import 'package:live_stream/controllers/live_stream/impl/host/live_stream_host_event.dart';
 import 'package:live_stream/controllers/live_view_bloc/live_view_cubit.dart';
 import 'package:live_stream/controllers/live_view_bloc/live_view_state.dart';
-import 'package:live_stream/services/agora/impl/agora_host_service.dart';
 import 'package:live_stream/services/ui_live_stream/model/ui_live_comment.dart';
 import 'package:live_stream/utils/dialog/error_dialog.dart';
 import 'package:live_stream/views/screens/live_stream/view/live_stream_full_screen_view.dart';
@@ -35,11 +32,10 @@ class LiveStreamScreen<T extends LiveStreamBaseBloc> extends StatelessWidget {
 
     if (liveStreamBloc.isHost) {
       return Scaffold(
-        body: LiveStreamFullScreenView<T>(),
+        body: LiveStreamView<T>(),
       );
     }
 
-    ///Guest
     return Scaffold(
       backgroundColor: kBgColor,
       body: PopScope(
@@ -47,14 +43,13 @@ class LiveStreamScreen<T extends LiveStreamBaseBloc> extends StatelessWidget {
         child: BlocConsumer<LiveStreamGuestBloc, LiveStreamBaseState>(
           listener: (context, state) async {
             if (state is LiveStreamGuestFailedToJoinState) {
-              //TODO
               await showErrorDialog("Failed to join", state.message);
               StarlightUtils.pop();
             }
           },
           builder: (context, state) {
             if (state is LiveStreamGuestJoinedState) {
-              return const LiveStreamFullScreenView<LiveStreamGuestBloc>();
+              return const LiveStreamView<LiveStreamGuestBloc>();
             }
             if (state is LiveStreamGuestFailedToJoinState) {
               return const SizedBox();
@@ -259,59 +254,6 @@ class CommentBox extends StatelessWidget {
             ),
           )
         ],
-      ),
-    );
-  }
-}
-
-class LiveViewToggle extends StatelessWidget {
-  const LiveViewToggle({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final bloc = context.read<LiveViewCubit>();
-    return IconButton(
-      onPressed: bloc.toggle,
-      icon: BlocBuilder<LiveViewCubit, LiveViewState>(
-        builder: (_, state) {
-          return Icon(
-            state is MinimizedLiveViewState
-                ? Icons.view_in_ar_outlined
-                : Icons.compare_arrows,
-            color: Colors.white,
-          );
-        },
-      ),
-    );
-  }
-}
-
-class LiveEndButton extends StatelessWidget {
-  const LiveEndButton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final bloc = context.read<LiveStreamHostBloc>();
-    return SizedBox(
-      width: 60,
-      height: 30,
-      child: ElevatedButton(
-        style: ButtonStyle(
-          backgroundColor: const MaterialStatePropertyAll(Colors.red),
-          foregroundColor: const MaterialStatePropertyAll(Colors.white),
-          shape: MaterialStatePropertyAll(RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
-          )),
-          padding: const MaterialStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 4),
-          ),
-        ),
-        onPressed: () {
-          bloc.add(const LiveStreamEndEvent());
-        },
-        child: const Text(
-          'End',
-        ),
       ),
     );
   }

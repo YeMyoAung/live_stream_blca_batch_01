@@ -13,3 +13,9 @@ class GoToSearchPageEvent extends HomePageEvent {
 class GoToProfilePageEvent extends HomePageEvent {
   const GoToProfilePageEvent();
 }
+
+class OnScrollEvent extends HomePageEvent {
+  final int index;
+
+  const OnScrollEvent(this.index);
+}

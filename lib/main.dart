@@ -4,20 +4,21 @@ import 'package:live_stream/routes/route_name.dart';
 import 'package:live_stream/routes/router.dart';
 import 'package:live_stream/services/agora/base/agora_base_service.dart';
 import 'package:live_stream/services/agora/impl/agora_host_service.dart';
+import 'package:live_stream/services/firebase/firestore.dart';
 import 'package:live_stream/themes/light_theme.dart';
+import 'package:live_stream/themes/theme.dart';
 import 'package:starlight_utils/starlight_utils.dart';
 
-// final LiveStreamUtilsService socketService = LiveStreamUtilsService();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setup();
-  // await socketService.init();
   runApp(MainApp(
-    service: Locator<AgoraHostService>(),
+    service: locator<AgoraHostService>(),
   ));
 }
 
-final AppLightTheme appLightTheme = AppLightTheme();
+final AppStandardTheme appLightTheme = AppLightTheme();
+final AppStandardTheme appDarkTheme = AppDarkTheme();
 
 // void callback() {
 //   if (socketService.socket == null) {
@@ -63,16 +64,25 @@ final AppLightTheme appLightTheme = AppLightTheme();
 
 class MainApp extends StatelessWidget {
   final AgoraBaseService service;
+
   const MainApp({super.key, required this.service});
 
   @override
   Widget build(BuildContext context) {
-    // callback();
-    return MaterialApp(
-      navigatorKey: StarlightUtils.navigatorKey,
-      onGenerateRoute: router,
-      theme: appLightTheme.theme,
-      initialRoute: RouteNames.auth,
+    final SettingService settingService = locator<SettingService>();
+    return StreamBuilder(
+      stream: settingService.settings(),
+      builder: (_, snapshot) {
+        final isDark = snapshot.data?.theme == "dark";
+        return MaterialApp(
+          navigatorKey: StarlightUtils.navigatorKey,
+          onGenerateRoute: router,
+          theme: appLightTheme.theme,
+          darkTheme: appDarkTheme.theme,
+          themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+          initialRoute: RouteNames.auth,
+        );
+      },
     );
   }
 }
